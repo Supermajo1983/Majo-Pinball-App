@@ -18,3 +18,8 @@ main{padding:0 12px 24px}
 #close{position:absolute;right:10px;top:10px}
 li{margin:4px 0}
 .warn{background:#7c2d12;padding:8px;border-radius:8px}
+.ac{position:relative;flex:1}
+#suggest{position:absolute;left:0;right:0;top:100%;margin:0;padding:0;list-style:none;background:#1f2937;border:1px solid #374151;border-radius:8px;z-index:4}
+#suggest li{padding:12px 10px;border-bottom:1px solid #374151;cursor:pointer}
+#suggest li:last-child{border-bottom:0}
+#more{width:100%;margin-top:8px}

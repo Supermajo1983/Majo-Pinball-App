@@ -1,5 +1,5 @@
-const CACHE = 'majo-pinball-v3';
-const ASSETS = ['./', 'index.html', 'app.js', 'style.css', 'data/games.js', 'data/part-1.js', 'data/part-2.js', 'data/part-3.js', 'data/part-4.js', 'data/part-5.js', 'data/merge.js', 'manifest.webmanifest'];
+const CACHE = 'majo-pinball-v4';
+const ASSETS = ['./', 'index.html', 'app.js', 'mp-utils.js', 'style.css', 'data/games.js', 'data/part-1.js', 'data/part-4.js', 'data/part-5.js', 'data/merge.js', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS))));
 self.addEventListener('activate', (e) => e.waitUntil(
