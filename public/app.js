@@ -35,7 +35,10 @@ function renderGames() {
 let tournaments = [];
 const mpGet = async (p) => {
   const r = await fetch('/api/mp/' + p);
-  if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'Matchplay-Token fehlt (MATCHPLAY_TOKEN am Server setzen).' : 'Matchplay-Fehler ' + r.status);
+  if (!r.ok) {
+    const hint = r.status === 401 ? ' (Token ungueltig oder fehlt: MATCHPLAY_TOKEN am Server pruefen)' : '';
+    throw new Error('Matchplay-Fehler ' + r.status + hint);
+  }
   return (await r.json()).data;
 };
 
