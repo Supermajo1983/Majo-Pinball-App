@@ -21,7 +21,7 @@
 <main>
   <section id="tournaments">
     <form id="playerForm">
-      <input id="playerName" placeholder="Spielername oder Matchplay-User-ID" autocomplete="off">
+      <div class="ac"><input id="playerName" placeholder="Name oder IFPA-Nummer" autocomplete="off"><ul id="suggest" hidden></ul></div>
       <button>Suchen</button>
     </form>
     <div id="tList"></div>
@@ -32,10 +32,9 @@
   </section>
 </main>
 <div id="modal" hidden><div class="card"><button id="close">✕</button><div id="detail"></div></div></div>
+<script src="mp-utils.js"></script>
 <script src="data/games.js"></script>
 <script src="data/part-1.js"></script>
-<script src="data/part-2.js"></script>
-<script src="data/part-3.js"></script>
 <script src="data/part-4.js"></script>
 <script src="data/part-5.js"></script>
 <script src="data/merge.js"></script>

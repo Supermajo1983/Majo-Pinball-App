@@ -12,7 +12,7 @@ const TYPES = {
   '.png': 'image/png', '.svg': 'image/svg+xml',
 };
 const cache = new Map();
-const TTL = 8000;
+const TTL = 4000;
 
 // Matchplay verlangt api.matchplay.events; der Pfad-Praefix ist per MATCHPLAY_BASE ueberschreibbar.
 const BASES = process.env.MATCHPLAY_BASE
