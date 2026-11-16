@@ -10,12 +10,15 @@ function findGame(name) {
     || null;
 }
 
+let openTid = null; // Turnier, aus dem die Geraeteliste geoeffnet wurde
+
 function showGame(name, info) {
   const g = findGame(name);
   const t = g ? g.tips : window.GENERIC.tips;
   const s = g ? g.strategy : window.GENERIC.strategy;
   const list = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
-  $('#detail').innerHTML = `<h2>${esc(g ? g.name : name)}</h2>
+  const back = openTid != null ? '<button class="back" data-back="1">← Zurück zur Geräteliste</button>' : '';
+  $('#detail').innerHTML = `${back}<h2>${esc(g ? g.name : name)}</h2>
     <div class="muted">${g ? esc(g.maker + ' · ' + g.year) : esc(info || '')}</div>
     ${g ? '' : '<p class="warn">Für dieses Gerät gibt es noch keine eigenen Tipps – allgemeine Hinweise.</p>'}
     <h3>Tipps</h3>${list(t)}<h3>Turnierstrategie</h3>${list(s)}
@@ -96,15 +99,28 @@ function renderTournaments() {
   const card = (t) => {
     const [txt, cls] = t._stale ? ['nicht gestartet', ''] : LABEL[t._s];
     const place = t._place ? `<div><b>${t._s === 'live' ? 'Aktuell ' : ''}Platz ${t._place.position}</b> <span class="muted">von ${t._place.total}</span></div>` : '';
-    return `<div class="item"><b>${esc(t.name)}</b> <span class="tag ${cls}">${txt}</span>
+    const n = (t.arenas || []).length;
+    return `<div class="item click" data-t="${esc(t.tournamentId)}"><b>${esc(t.name)}</b> <span class="tag ${cls}">${txt}</span>
     <div class="muted">${esc(t.startUtc ? new Date(t.startUtc).toLocaleString('de-DE') : '')}</div>${place}
-    <div>${(t.arenas || []).map((a) => `<span class="tag click" data-g="${esc(a.name)}" style="cursor:pointer">${esc(a.name)}</span>`).join(' ') || '<span class="muted">Keine Geräte hinterlegt</span>'}</div></div>`;
+    <div class="muted">${n ? n + ' Flipper – antippen für die Liste' : 'Keine Geräte hinterlegt'}</div></div>`;
   };
   el.innerHTML = `<p class="muted">Spieler: <b>${esc(selected.name)}</b></p>` + tournaments.map((t) => {
     const head = t._s !== last ? `<h2 class="sep">${HEAD[t._s]}</h2>` : '';
     last = t._s;
     return head + card(t);
   }).join('') + (doneCount >= completedLimit ? '<button id="more">Mehr abgeschlossene Turniere</button>' : '');
+}
+
+function showArenas(id) {
+  const t = tournaments.find((x) => String(x.tournamentId) === String(id));
+  if (!t) return;
+  openTid = t.tournamentId;
+  const arenas = t.arenas || [];
+  $('#detail').innerHTML = `<h2>${esc(t.name)}</h2><div class="muted">${arenas.length} Flipper – antippen für Tipps &amp; Strategie</div>`
+    + (arenas.map((a) => `<div class="item click" data-g="${esc(a.name)}"><b>${esc(a.name)}</b>${findGame(a.name) ? '' : ' <span class="muted">(allgemeine Tipps)</span>'}</div>`).join('')
+      || '<p class="muted">Keine Geräte hinterlegt.</p>');
+  $('#modal').hidden = false;
+  $('#modal').scrollTop = 0;
 }
 
 async function refresh() {
@@ -170,6 +186,9 @@ document.addEventListener('click', (e) => {
   if (sug) return selectUser(suggestions.find((u) => String(u.userId) === sug.dataset.uid));
   if (!e.target.closest('.ac')) showSuggestions([]);
   if (e.target.id === 'more') { completedLimit += 10; return refresh(); }
+  if (e.target.closest('[data-back]')) return showArenas(openTid);
+  const tc = e.target.closest('[data-t]');
+  if (tc) return showArenas(tc.dataset.t);
   const g = e.target.closest('[data-g]');
   if (g) return showGame(g.dataset.g);
   const tab = e.target.closest('[data-tab]');
@@ -179,7 +198,7 @@ document.addEventListener('click', (e) => {
     $('#games').hidden = tab.dataset.tab !== 'games';
   }
 });
-$('#close').onclick = () => { $('#modal').hidden = true; };
+$('#close').onclick = () => { $('#modal').hidden = true; openTid = null; };
 $('#search').oninput = renderGames;
 $('#playerName').oninput = onType;
 $('#playerForm').onsubmit = async (e) => {
