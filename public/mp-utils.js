@@ -21,17 +21,26 @@
     return hits.sort((a, b) => a.rank - b.rank || norm(a.u.name).localeCompare(norm(b.u.name))).slice(0, max).map((h) => h.u);
   }
 
+  // In Turnier-Spielern steht die Matchplay-Konto-ID in claimedBy (oder userId).
+  const uid = (p) => (p.claimedBy ?? p.userId);
+
+  // true, wenn der Spieler dabei ist; ohne Konto-Angaben in der Liste wird nicht gefiltert.
+  function isPlayer(players, userId) {
+    if (!Array.isArray(players) || !players.some((p) => uid(p) != null)) return true;
+    return players.some((p) => String(uid(p)) === String(userId));
+  }
+
   // Platzierung eines Spielers aus Standings (playerId, position) und Spielerliste des Turniers.
   function placement(standings, players, userId) {
     if (!Array.isArray(standings) || !Array.isArray(players)) return null;
-    const me = players.find((p) => String(p.userId) === String(userId));
+    const me = players.find((p) => String(uid(p)) === String(userId));
     if (!me) return null;
     const row = standings.find((s) => String(s.playerId) === String(me.playerId));
     if (!row || row.position == null) return null;
     return { position: row.position, total: standings.length };
   }
 
-  const api = { matchUsers, placement };
+  const api = { matchUsers, placement, isPlayer };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MPU = api;
 })(typeof window !== 'undefined' ? window : globalThis);

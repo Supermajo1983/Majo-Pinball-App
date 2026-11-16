@@ -10,7 +10,7 @@ assert.strictEqual(new Set(names).size, names.length, 'duplicate games');
 ctx.window.GAMES.forEach((g) => assert(g.tips.length >= 5 && g.strategy.length >= 1, g.name));
 console.log('ok', names.length, 'games');
 
-const { matchUsers, placement } = require('./public/mp-utils.js');
+const { matchUsers, placement, isPlayer } = require('./public/mp-utils.js');
 const users = [
   { userId: 1, name: 'Marco Siemund', ifpaId: 12345 }, { userId: 2, name: 'Mara Meier', ifpaId: 999 },
   { userId: 3, name: 'Tom Marco', ifpaId: 12399 }, { userId: 1, name: 'Marco Siemund', ifpaId: 12345 },
@@ -22,3 +22,6 @@ assert.deepStrictEqual(matchUsers(users, '123').map((u) => u.userId), [1, 3], 'I
 assert.deepStrictEqual(placement([{ playerId: 7, position: 3 }, { playerId: 8, position: 1 }], [{ playerId: 7, userId: 1 }], 1), { position: 3, total: 2 });
 assert.strictEqual(placement(null, [], 1), null);
 console.log('mp-utils ok');
+assert.strictEqual(placement([{ playerId: 7, position: 2 }], [{ playerId: 7, claimedBy: 55 }], 55).position, 2, 'claimedBy');
+assert(isPlayer([{ claimedBy: 1 }, { claimedBy: null }], 1) && !isPlayer([{ claimedBy: 2 }], 1) && isPlayer([{ playerId: 3 }], 1));
+console.log('claimedBy ok');

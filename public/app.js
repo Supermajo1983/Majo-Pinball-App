@@ -75,7 +75,7 @@ async function loadTournaments() {
     ...tag(done, 'done').sort(byStart(-1)).slice(0, completedLimit),
   ];
   const detailed = await Promise.all(list.map(loadDetail));
-  tournaments = detailed.filter((t) => !t.players || t.players.some((x) => String(x.userId) === String(selected.userId)));
+  tournaments = detailed.filter((t) => window.MPU.isPlayer(t.players, selected.userId));
 }
 
 const LABEL = { live: ['LIVE', 'live'], soon: ['geplant', ''], done: ['abgeschlossen', ''] };
@@ -112,10 +112,9 @@ let sugTimer;
 let suggestions = [];
 
 async function fetchUsers(q) {
-  const calls = [mpGet('users?query=' + encodeURIComponent(q))];
-  if (/^\d+$/.test(q)) calls.push(mpGet('users?ifpa=' + encodeURIComponent(q)).catch(() => []));
-  const res = await Promise.all(calls);
-  return res.flat().filter(Boolean);
+  const calls = [mpGet(`search?query=${encodeURIComponent(q)}&type=users`)];
+  if (/^\d+$/.test(q)) calls.push(mpGet('users/' + q).catch(() => null));
+  return (await Promise.all(calls)).flat().filter((u) => u && u.userId != null);
 }
 
 function showSuggestions(list, msg) {

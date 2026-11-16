@@ -13,6 +13,7 @@ const TYPES = {
 };
 const cache = new Map();
 const TTL = 4000;
+const STANDINGS_TTL = 15000; // Matchplay: Standings max. alle 15 s abfragen
 
 // Matchplay verlangt api.matchplay.events; der Pfad-Praefix ist per MATCHPLAY_BASE ueberschreibbar.
 const BASES = process.env.MATCHPLAY_BASE
@@ -22,7 +23,7 @@ let baseIdx = 0;
 
 async function mp(pathAndQuery) {
   const hit = cache.get(pathAndQuery);
-  if (hit && Date.now() - hit.t < TTL) return hit;
+  if (hit && Date.now() - hit.t < (pathAndQuery.includes('/standings') ? STANDINGS_TTL : TTL)) return hit;
   let entry;
   for (let i = 0; i < BASES.length; i++) {
     const b = (baseIdx + i) % BASES.length;
