@@ -57,7 +57,7 @@ async function loadDetail(t) {
       t._s === 'soon' ? null : mpGet(`tournaments/${t.tournamentId}/standings`).catch(() => null),
     ]);
     const full = { ...t, ...d, _s: t._s, _place: window.MPU.placement(st, d && d.players, selected.userId) };
-    if (t._s === 'done') detailCache.set(t.tournamentId, full);
+    if (t._s === 'done' && !t._stale) detailCache.set(t.tournamentId, full);
     return full;
   } catch { return t; }
 }
@@ -69,10 +69,16 @@ async function loadTournaments() {
   const q = (s) => mpGet(`tournaments?played=${selected.userId}&status=${s}`);
   const [live, soon, done] = await Promise.all([q('started'), q('upcoming'), q('completed')]);
   const tag = (a, s) => (a || []).map((t) => ({ ...t, _s: s }));
+  const now = Date.now();
+  const isPast = (t) => t.startUtc && new Date(t.startUtc) < now;
+  // Als "geplant" gefuehrte Turniere mit Startdatum in der Vergangenheit gelten als vergangen.
+  const future = tag(soon, 'soon').filter((t) => !isPast(t));
+  const stale = tag(soon, 'done').filter(isPast).map((t) => ({ ...t, _stale: true }));
+  const past = [...tag(done, 'done'), ...stale].sort(byStart(-1));
   const list = [
-    ...tag(soon, 'soon').sort(byStart(1)).slice(0, 15),
+    ...future.sort(byStart(1)).slice(0, 15),
     ...tag(live, 'live').sort(byStart(1)).slice(0, 15),
-    ...tag(done, 'done').sort(byStart(-1)).slice(0, completedLimit),
+    ...past.slice(0, completedLimit),
   ];
   const detailed = await Promise.all(list.map(loadDetail));
   tournaments = detailed.filter((t) => window.MPU.isPlayer(t.players, selected.userId));
@@ -88,7 +94,7 @@ function renderTournaments() {
   const HEAD = { soon: 'Anstehende Turniere (nächstes zuerst)', live: 'Laufende Turniere', done: 'Vergangene Turniere (neueste zuerst)' };
   let last = null;
   const card = (t) => {
-    const [txt, cls] = LABEL[t._s];
+    const [txt, cls] = t._stale ? ['nicht gestartet', ''] : LABEL[t._s];
     const place = t._place ? `<div><b>${t._s === 'live' ? 'Aktuell ' : ''}Platz ${t._place.position}</b> <span class="muted">von ${t._place.total}</span></div>` : '';
     return `<div class="item"><b>${esc(t.name)}</b> <span class="tag ${cls}">${txt}</span>
     <div class="muted">${esc(t.startUtc ? new Date(t.startUtc).toLocaleString('de-DE') : '')}</div>${place}
