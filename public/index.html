@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<title>Pinball Turnier-Coach</title>
+</head>
+<body>
+<header>
+  <h1>🎯 Pinball Coach</h1>
+  <nav>
+    <button data-tab="tournaments" class="active">Turniere</button>
+    <button data-tab="games">Flipper</button>
+  </nav>
+  <small id="status"></small>
+</header>
+<main>
+  <section id="tournaments">
+    <form id="playerForm">
+      <input id="playerName" placeholder="Spielername oder Matchplay-User-ID" autocomplete="off">
+      <button>Suchen</button>
+    </form>
+    <div id="tList"></div>
+  </section>
+  <section id="games" hidden>
+    <input id="search" type="search" placeholder="Flipper suchen …" autocomplete="off">
+    <div id="gList"></div>
+  </section>
+</main>
+<div id="modal" hidden><div class="card"><button id="close">✕</button><div id="detail"></div></div></div>
+<script src="data/games.js"></script>
+<script src="data/part-1.js"></script>
+<script src="data/part-2.js"></script>
+<script src="data/part-3.js"></script>
+<script src="data/part-4.js"></script>
+<script src="data/part-5.js"></script>
+<script src="data/merge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

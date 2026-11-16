@@ -1,0 +1,11 @@
+const assert = require('assert');
+const vm = require('vm');
+const fs = require('fs');
+const ctx = { window: {} };
+const dir = __dirname + '/public/data/';
+const files = ['games.js', ...fs.readdirSync(dir).filter((f) => /^part-\d+\.js$/.test(f)).sort(), 'merge.js'];
+files.forEach((f) => vm.runInNewContext(fs.readFileSync(dir + f, 'utf8'), ctx));
+const names = ctx.window.GAMES.map((g) => g.name);
+assert.strictEqual(new Set(names).size, names.length, 'duplicate games');
+ctx.window.GAMES.forEach((g) => assert(g.tips.length >= 5 && g.strategy.length >= 1, g.name));
+console.log('ok', names.length, 'games');
