@@ -98,7 +98,7 @@ function renderTournaments() {
   let last = null;
   const card = (t) => {
     const [txt, cls] = t._stale ? ['nicht gestartet', ''] : LABEL[t._s];
-    const place = t._place ? `<div><b>${t._s === 'live' ? 'Aktuell ' : ''}Platz ${t._place.position}</b> <span class="muted">von ${t._place.total}</span></div>` : '';
+    const place = t._place ? `<div><b class="${window.MPU.placeClass(t._place.position, t._place.total)}">${t._s === 'live' ? 'Aktuell ' : ''}Platz ${t._place.position}</b> <span class="muted">von ${t._place.total}</span></div>` : '';
     const n = (t.arenas || []).length;
     return `<div class="item click" data-t="${esc(t.tournamentId)}"><b>${esc(t.name)}</b> <span class="tag ${cls}">${txt}</span>
     <div class="muted">${esc(t.startUtc ? new Date(t.startUtc).toLocaleString('de-DE') : '')}</div>${place}

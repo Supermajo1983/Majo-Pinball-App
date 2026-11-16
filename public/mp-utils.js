@@ -40,7 +40,14 @@
     return { position: row.position, total: standings.length };
   }
 
-  const api = { matchUsers, placement, isPlayer };
+  // Magenta: Platz 1-3; Cyan: uebrige Plaetze in den besten 10 % aller Teilnehmer.
+  function placeClass(position, total) {
+    if (!position || !total) return '';
+    if (position <= 3) return 'p-top3';
+    return position / total <= 0.1 ? 'p-top10' : '';
+  }
+
+  const api = { matchUsers, placement, isPlayer, placeClass };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MPU = api;
 })(typeof window !== 'undefined' ? window : globalThis);
