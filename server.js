@@ -14,14 +14,25 @@ const TYPES = {
 const cache = new Map();
 const TTL = 8000;
 
+// Matchplay verlangt api.matchplay.events; der Pfad-Praefix ist per MATCHPLAY_BASE ueberschreibbar.
+const BASES = process.env.MATCHPLAY_BASE
+  ? [process.env.MATCHPLAY_BASE]
+  : ['https://api.matchplay.events/api/', 'https://api.matchplay.events/'];
+let baseIdx = 0;
+
 async function mp(pathAndQuery) {
   const hit = cache.get(pathAndQuery);
   if (hit && Date.now() - hit.t < TTL) return hit;
-  const res = await fetch('https://app.matchplay.events/api/' + pathAndQuery, {
-    headers: { Accept: 'application/json', ...(TOKEN && { Authorization: 'Bearer ' + TOKEN }) },
-  });
-  const entry = { t: Date.now(), status: res.status, body: await res.text() };
-  if (res.ok) cache.set(pathAndQuery, entry);
+  let entry;
+  for (let i = 0; i < BASES.length; i++) {
+    const b = (baseIdx + i) % BASES.length;
+    const res = await fetch(BASES[b] + pathAndQuery, {
+      headers: { Accept: 'application/json', ...(TOKEN && { Authorization: 'Bearer ' + TOKEN }) },
+    });
+    entry = { t: Date.now(), status: res.status, body: await res.text() };
+    if (res.status !== 404) { baseIdx = b; break; }
+  }
+  if (entry.status >= 200 && entry.status < 300) cache.set(pathAndQuery, entry);
   return entry;
 }
 
