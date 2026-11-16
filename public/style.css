@@ -23,3 +23,4 @@ li{margin:4px 0}
 #suggest li{padding:12px 10px;border-bottom:1px solid #374151;cursor:pointer}
 #suggest li:last-child{border-bottom:0}
 #more{width:100%;margin-top:8px}
+.sep{font-size:1rem;margin:18px 0 4px;padding-bottom:4px;border-bottom:2px solid #facc15;color:#facc15}

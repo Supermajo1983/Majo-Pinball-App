@@ -70,8 +70,8 @@ async function loadTournaments() {
   const [live, soon, done] = await Promise.all([q('started'), q('upcoming'), q('completed')]);
   const tag = (a, s) => (a || []).map((t) => ({ ...t, _s: s }));
   const list = [
-    ...tag(live, 'live').sort(byStart(-1)).slice(0, 15),
     ...tag(soon, 'soon').sort(byStart(1)).slice(0, 15),
+    ...tag(live, 'live').sort(byStart(1)).slice(0, 15),
     ...tag(done, 'done').sort(byStart(-1)).slice(0, completedLimit),
   ];
   const detailed = await Promise.all(list.map(loadDetail));
@@ -85,12 +85,19 @@ function renderTournaments() {
   if (!selected) { el.innerHTML = '<p class="muted">Namen oder IFPA-Nummer eintippen und einen Vorschlag auswählen.</p>'; return; }
   if (!tournaments.length) { el.innerHTML = `<p class="muted">Keine Turniere für ${esc(selected.name)} gefunden.</p>`; return; }
   const doneCount = tournaments.filter((t) => t._s === 'done').length;
-  el.innerHTML = `<p class="muted">Spieler: <b>${esc(selected.name)}</b></p>` + tournaments.map((t) => {
+  const HEAD = { soon: 'Anstehende Turniere (nächstes zuerst)', live: 'Laufende Turniere', done: 'Vergangene Turniere (neueste zuerst)' };
+  let last = null;
+  const card = (t) => {
     const [txt, cls] = LABEL[t._s];
     const place = t._place ? `<div><b>${t._s === 'live' ? 'Aktuell ' : ''}Platz ${t._place.position}</b> <span class="muted">von ${t._place.total}</span></div>` : '';
     return `<div class="item"><b>${esc(t.name)}</b> <span class="tag ${cls}">${txt}</span>
     <div class="muted">${esc(t.startUtc ? new Date(t.startUtc).toLocaleString('de-DE') : '')}</div>${place}
     <div>${(t.arenas || []).map((a) => `<span class="tag click" data-g="${esc(a.name)}" style="cursor:pointer">${esc(a.name)}</span>`).join(' ') || '<span class="muted">Keine Geräte hinterlegt</span>'}</div></div>`;
+  };
+  el.innerHTML = `<p class="muted">Spieler: <b>${esc(selected.name)}</b></p>` + tournaments.map((t) => {
+    const head = t._s !== last ? `<h2 class="sep">${HEAD[t._s]}</h2>` : '';
+    last = t._s;
+    return head + card(t);
   }).join('') + (doneCount >= completedLimit ? '<button id="more">Mehr abgeschlossene Turniere</button>' : '');
 }
 
