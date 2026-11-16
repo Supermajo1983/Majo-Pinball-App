@@ -12,6 +12,17 @@ function findGame(name) {
 
 let openTid = null; // Turnier, aus dem die Geraeteliste geoeffnet wurde
 
+function proHtml(name) {
+  const P = window.PRO_TIPS;
+  if (!P) return '';
+  const n = norm(name);
+  const items = [];
+  P.players.forEach((p) => Object.keys(p.machines || {}).forEach((m) => { if (norm(m) === n) items.push(...p.machines[m]); }));
+  const gen = (P.general || []).concat(...P.players.map((p) => p.general.slice(0, 1))).slice(0, 4);
+  const ul = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  return (items.length ? '<h3>Profi-Tipps (dieses Gerät)</h3>' + ul(items) : '') + (gen.length ? '<h3>Profi-Mindset (Top-Spieler)</h3>' + ul(gen) : '');
+}
+
 function showGame(name, info) {
   const g = findGame(name);
   const t = g ? g.tips : window.GENERIC.tips;
@@ -22,6 +33,7 @@ function showGame(name, info) {
     <div class="muted">${g ? esc(g.maker + ' · ' + g.year) : esc(info || '')}</div>
     ${g ? '' : '<p class="warn">Für dieses Gerät gibt es noch keine eigenen Tipps – allgemeine Hinweise.</p>'}
     <h3>Tipps</h3>${list(t)}<h3>Turnierstrategie</h3>${list(s)}
+    ${proHtml(g ? g.name : name)}
     ${g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
   $('#modal').hidden = false;
 }
