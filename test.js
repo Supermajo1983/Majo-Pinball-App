@@ -25,3 +25,6 @@ console.log('mp-utils ok');
 assert.strictEqual(placement([{ playerId: 7, position: 2 }], [{ playerId: 7, claimedBy: 55 }], 55).position, 2, 'claimedBy');
 assert(isPlayer([{ claimedBy: 1 }, { claimedBy: null }], 1) && !isPlayer([{ claimedBy: 2 }], 1) && isPlayer([{ playerId: 3 }], 1));
 console.log('claimedBy ok');
+const { placeClass } = require('./public/mp-utils.js');
+assert.deepStrictEqual([placeClass(1, 5), placeClass(3, 100), placeClass(4, 100), placeClass(10, 100), placeClass(11, 100), placeClass(2, 8), placeClass(4, 8)], ['p-top3', 'p-top3', 'p-top10', 'p-top10', '', 'p-top3', '']);
+console.log('placeClass ok');
