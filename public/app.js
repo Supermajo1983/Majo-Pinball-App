@@ -27,8 +27,7 @@ const rich = (t) => esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}"
 function notesHtml(name, editing) {
   const k = noteKey(name);
   const n = notes[k] || {};
-  const p = pinEntry(name);
-  const head = `<h3>Majo Strategie</h3>${p ? `<div class="muted">Pinside Top 200: Platz ${p.rank}</div>` : ''}`;
+  const head = '<h3>Majo Strategie</h3>';
   if (editing) {
     return `${head}<label class="muted">Rulesheet (Text oder Link)</label><textarea id="nRules" rows="4">${esc(n.rules || '')}</textarea>
       <label class="muted">Strategie</label><textarea id="nStrat" rows="8">${esc(n.strategy || '')}</textarea>
@@ -51,16 +50,16 @@ function proHtml(name) {
   return (items.length ? '<h3>Profi-Tipps (dieses Gerät)</h3>' + ul(items) : '') + (gen.length ? '<h3>Profi-Mindset (Top-Spieler)</h3>' + ul(gen) : '');
 }
 
-function showGame(name, fromList) {
+function showGame(name, fromList, notesOnly) {
   const g = findGame(name);
   const list = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
   const back = fromList ? '<button class="back" data-back="1">← Zurück zur Geräteliste</button>' : '';
   $('#detail').innerHTML = `${back}<h2>${esc(g ? g.name : name)}</h2>
     <div class="muted">${g ? esc(g.maker + ' · ' + g.year) : ''}</div>
     <div id="notes" data-name="${esc(name)}">${notesHtml(name)}</div>
-    ${g ? `<h3>Tipps</h3>${list(g.tips)}<h3>Turnierstrategie</h3>${list(g.strategy)}` : '<p class="warn">Für dieses Gerät sind noch keine recherchierten Tipps hinterlegt.</p>'}
-    ${proHtml(g ? g.name : name)}
-    ${g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
+    ${notesOnly ? '' : g ? `<h3>Tipps</h3>${list(g.tips)}<h3>Turnierstrategie</h3>${list(g.strategy)}` : '<p class="warn">Für dieses Gerät sind noch keine recherchierten Tipps hinterlegt.</p>'}
+    ${notesOnly ? '' : proHtml(g ? g.name : name)}
+    ${!notesOnly && g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
   $('#modal').hidden = false;
   $('#modal').scrollTop = 0;
 }
@@ -100,7 +99,7 @@ function applyState(s) {
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === s.tab));
   ['tournaments', 'games', 'majo', 'strat'].forEach((id) => { $('#' + id).hidden = id !== s.tab; });
   if (!s.modal) { $('#modal').hidden = true; return; }
-  if (s.modal === 'arenas') showArenas(s.tid); else showGame(s.name, s.tid != null);
+  if (s.modal === 'arenas') showArenas(s.tid); else showGame(s.name, s.tid != null, s.notesOnly);
 }
 function nav(patch) {
   const s = { tab: cur.tab, ...patch };
@@ -121,7 +120,7 @@ function renderGames() {
 function renderStrat() {
   const q = norm($('#sSearch').value);
   const items = window.PINSIDE.filter((p) => !q || norm(p.name + ' ' + p.maker).includes(q));
-  $('#sList').innerHTML = items.map((p) => `<div class="item click" data-g="${esc(p.name)}"><b>${p.rank}. ${esc(p.name)}</b>${hasNote(p.name) ? ' <span class="tag">✎ Notiz</span>' : ''}${findGame(p.name) ? ' <span class="tag">Tipps</span>' : ''}
+  $('#sList').innerHTML = items.map((p) => `<div class="item click" data-g="${esc(p.name)}"><b>${esc(p.name)}</b>${hasNote(p.name) ? ' <span class="tag">✎ Notiz</span>' : ''}
     <div class="muted">${esc(p.maker)} · ${p.year}</div></div>`).join('') || '<p class="muted">Nichts gefunden.</p>';
 }
 
@@ -316,7 +315,7 @@ document.addEventListener('click', (e) => {
   const tc = e.target.closest('[data-t]');
   if (tc) return nav({ modal: 'arenas', tid: tc.dataset.t, d: 1 });
   const g = e.target.closest('[data-g]');
-  if (g) return nav({ modal: 'game', name: g.dataset.g, tid: cur.modal === 'arenas' ? cur.tid : null, d: cur.modal === 'arenas' ? 2 : 1 });
+  if (g) return nav({ modal: 'game', notesOnly: !!g.closest('#strat'), name: g.dataset.g, tid: cur.modal === 'arenas' ? cur.tid : null, d: cur.modal === 'arenas' ? 2 : 1 });
   const tab = e.target.closest('[data-tab]');
   if (tab && tab.dataset.tab !== cur.tab) nav({ tab: tab.dataset.tab });
 });
