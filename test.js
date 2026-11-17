@@ -28,3 +28,12 @@ console.log('claimedBy ok');
 const { placeClass } = require('./public/mp-utils.js');
 assert.deepStrictEqual([placeClass(1, 5), placeClass(3, 100), placeClass(4, 100), placeClass(10, 100), placeClass(11, 100), placeClass(2, 8), placeClass(4, 8)], ['p-top3', 'p-top3', 'p-top10', 'p-top10', '', 'p-top3', '']);
 console.log('placeClass ok');
+
+{
+  const vm = require('vm');
+  const ctx = { window: {} };
+  vm.runInNewContext(require('fs').readFileSync(__dirname + '/public/data/pinside.js', 'utf8'), ctx);
+  const P = ctx.window.PINSIDE;
+  if (P.length < 190 || P.some((p) => !p.name || !p.maker || !p.year || !p.rank)) throw new Error('pinside list invalid');
+  console.log('pinside ok', P.length);
+}

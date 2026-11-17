@@ -29,3 +29,8 @@ li{margin:4px 0}
 .back{background:#374151;color:#e5e7eb;margin-bottom:8px}
 .p-top10{color:#22d3ee}
 .p-top3{color:#ff00ff}
+textarea{width:100%;box-sizing:border-box;background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:8px;padding:8px;font:inherit;margin:4px 0 8px}
+.note{white-space:pre-wrap;word-break:break-word;background:#1f2937;border-radius:8px;padding:8px;margin-bottom:8px}
+button.alt{background:#374151;color:#e5e7eb}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+nav button{margin-right:0}

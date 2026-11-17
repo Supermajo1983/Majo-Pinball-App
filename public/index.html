@@ -15,6 +15,8 @@
   <nav>
     <button data-tab="tournaments" class="active">Turniere</button>
     <button data-tab="games">Flipper</button>
+    <button data-tab="majo">Majo</button>
+    <button data-tab="strat">Majo Strategie</button>
   </nav>
   <small id="status"></small>
 </header>
@@ -30,6 +32,13 @@
     <input id="search" type="search" placeholder="Flipper suchen …" autocomplete="off">
     <div id="gList"></div>
   </section>
+  <section id="majo" hidden>
+    <div id="mList"><p class="muted">Lade …</p></div>
+  </section>
+  <section id="strat" hidden>
+    <input id="sSearch" type="search" placeholder="Pinside Top 200 durchsuchen …" autocomplete="off">
+    <div id="sList"></div>
+  </section>
 </main>
 <div id="modal" hidden><div class="card"><button id="close">✕</button><div id="detail"></div></div></div>
 <script src="mp-utils.js"></script>
@@ -41,6 +50,7 @@
 <script src="data/part-5.js"></script>
 <script src="data/part-6.js"></script>
 <script src="data/part-7.js"></script>
+<script src="data/pinside.js"></script>
 <script src="data/pro-tips.js"></script>
 <script src="data/merge.js"></script>
 <script src="app.js"></script>
