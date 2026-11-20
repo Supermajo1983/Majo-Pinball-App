@@ -4,7 +4,7 @@ const norm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/
 
 const findGame = (name) => window.MPU.matchGame(window.GAMES, name);
 
-// --- Gemeinsame Notizen (Majo Strategie) ---
+// --- Gemeinsame Notizen (Rulesheet/Strategie je Geraet) ---
 let notes = {};
 let notesInfo = { persistent: true, editable: true };
 const { cleanName, gkey } = window.MPU;
@@ -41,9 +41,8 @@ function proHtml(name) {
   const n = norm(name);
   const items = [];
   P.players.forEach((p) => Object.keys(p.machines || {}).forEach((m) => { if (norm(m) === n) items.push(...p.machines[m]); }));
-  const gen = (P.general || []).concat(...P.players.map((p) => p.general.slice(0, 1))).slice(0, 4);
-  const ul = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
-  return (items.length ? '<h3>Profi-Tipps (dieses Gerät)</h3>' + ul(items) : '') + (gen.length ? '<h3>Profi-Mindset (Top-Spieler)</h3>' + ul(gen) : '');
+  // Allgemeines "Profi-Mindset" wird bewusst nicht angezeigt (Majos Wunsch), nur geraetespezifische Tipps.
+  return items.length ? '<h3>Profi-Tipps (dieses Gerät)</h3><ul>' + items.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>' : '';
 }
 
 function kiHtml(name) {
@@ -53,7 +52,7 @@ function kiHtml(name) {
   return `<h3>KI Recherche</h3><p><b>Rulesheet:</b></p>${ul(k.rules)}<p><b>Strategie:</b></p>${ul(k.strategy)}<p class="muted">Quelle: ${rich(k.source)}</p>`;
 }
 
-function showGame(name, fromList, notesOnly) {
+function showGame(name, fromList) {
   const g = findGame(name);
   const list = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
   const back = fromList ? '<button class="back" data-back="1">← Zurück zur Geräteliste</button>' : '';
@@ -61,9 +60,9 @@ function showGame(name, fromList, notesOnly) {
     <div class="muted">${g ? esc(g.maker + ' · ' + g.year) : ''}</div>
     <div id="notes" data-name="${esc(name)}">${notesHtml(name)}</div>
     ${kiHtml(name)}
-    ${notesOnly ? '' : g ? `<h3>Tipps</h3>${list(g.tips)}<h3>Turnierstrategie</h3>${list(g.strategy)}` : '<p class="warn">Für dieses Gerät sind noch keine recherchierten Tipps hinterlegt.</p>'}
-    ${notesOnly ? '' : proHtml(g ? g.name : name)}
-    ${!notesOnly && g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
+    ${g ? `<h3>Tipps</h3>${list(g.tips)}<h3>Turnierstrategie</h3>${list(g.strategy)}` : '<p class="warn">Für dieses Gerät sind noch keine recherchierten Tipps hinterlegt.</p>'}
+    ${proHtml(g ? g.name : name)}
+    ${g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
   $('#modal').hidden = false;
   $('#modal').scrollTop = 0;
 }
@@ -84,7 +83,6 @@ async function saveNote(name) {
     localStorage.setItem('editKey', key);
     notes = j.notes;
     $('#notes').innerHTML = notesHtml(name);
-    renderStrat();
   } catch (e) { $('#nMsg').textContent = '⚠ ' + e.message; }
 }
 
@@ -101,9 +99,9 @@ let cur = { tab: 'tournaments' };
 function applyState(s) {
   cur = s;
   document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === s.tab));
-  ['tournaments', 'games', 'majo', 'strat'].forEach((id) => { $('#' + id).hidden = id !== s.tab; });
+  ['tournaments', 'games', 'majo'].forEach((id) => { $('#' + id).hidden = id !== s.tab; });
   if (!s.modal) { $('#modal').hidden = true; return; }
-  if (s.modal === 'arenas') showArenas(s.tid); else showGame(s.name, s.tid != null, s.notesOnly);
+  if (s.modal === 'arenas') showArenas(s.tid); else showGame(s.name, s.tid != null);
 }
 function nav(patch) {
   const s = { tab: cur.tab, ...patch };
@@ -121,12 +119,6 @@ function renderGames() {
     || '<p class="muted">Nichts gefunden.</p>';
 }
 
-function renderStrat() {
-  const q = norm($('#sSearch').value);
-  const items = window.PINSIDE.filter((p) => !q || norm(p.name + ' ' + p.maker).includes(q));
-  $('#sList').innerHTML = items.map((p) => `<div class="item click" data-g="${esc(p.name)}"><b>${esc(p.name)}</b>${hasNote(p.name) ? ' <span class="tag">✎ Notiz</span>' : ''}
-    <div class="muted">${esc(p.maker)} · ${p.year}</div></div>`).join('') || '<p class="muted">Nichts gefunden.</p>';
-}
 
 // --- Matchplay ---
 let selected = JSON.parse(localStorage.getItem('playerSel') || 'null');
@@ -145,16 +137,17 @@ const mpGet = async (p) => {
   return j.data ?? j;
 };
 
-async function loadDetail(t) {
-  const hit = detailCache.get(t.tournamentId);
+async function loadDetail(t, uid = selected && selected.userId) {
+  const ck = t.tournamentId + ':' + uid; // Platzierung haengt vom Spieler ab
+  const hit = detailCache.get(ck);
   if (hit) return hit;
   try {
     const [d, st] = await Promise.all([
       mpGet(`tournaments/${t.tournamentId}?includePlayers=true&includeArenas=true`),
       t._s === 'soon' ? null : mpGet(`tournaments/${t.tournamentId}/standings`).catch(() => null),
     ]);
-    const full = { ...t, ...d, _s: t._s, _place: selected ? window.MPU.placement(st, d && d.players, selected.userId) : null };
-    if (t._s === 'done' && !t._stale) detailCache.set(t.tournamentId, full);
+    const full = { ...t, ...d, _s: t._s, _place: uid != null ? window.MPU.placement(st, d && d.players, uid) : null };
+    if (t._s === 'done' && !t._stale) detailCache.set(ck, full);
     return full;
   } catch { return t; }
 }
@@ -209,7 +202,7 @@ function renderTournaments() {
 }
 
 function showArenas(id) {
-  const t = tournaments.concat(majoList).find((x) => String(x.tournamentId) === String(id));
+  const t = tournaments.concat(majoList, majoPast).find((x) => String(x.tournamentId) === String(id));
   if (!t) return;
   const arenas = t.arenas || [];
   $('#detail').innerHTML = `<h2>${esc(t.name)}</h2><div class="muted">${arenas.length} Flipper – antippen für Tipps &amp; Strategie</div>`
@@ -219,8 +212,9 @@ function showArenas(id) {
   $('#modal').scrollTop = 0;
 }
 
-// --- Majo: kommende Turniere von Marco Siemund ---
+// --- Majo: kommende und letzte 5 Turniere von Marco Siemund ---
 let majoList = [];
+let majoPast = [];
 let majoUser = JSON.parse(localStorage.getItem('majoUser') || 'null');
 
 async function loadMajo() {
@@ -232,20 +226,23 @@ async function loadMajo() {
   }
   const uid = majoUser.userId;
   const get = (qs) => mpGet('tournaments?' + qs).catch(() => []);
-  const [played, owned] = await Promise.all([get(`played=${uid}&status=upcoming`), get(`owner=${uid}&status=upcoming`)]);
+  const [played, owned, done] = await Promise.all([get(`played=${uid}&status=upcoming`), get(`owner=${uid}&status=upcoming`), get(`played=${uid}&status=completed`)]);
   const own = (owned || []).filter((t) => t.ownerId != null && String(t.ownerId) === String(uid));
   const byId = new Map();
   [...(played || []), ...own].forEach((t) => byId.set(t.tournamentId, { ...t, _s: 'soon' }));
   const now = Date.now();
   const future = [...byId.values()].filter((t) => !t.startUtc || new Date(t.startUtc) >= now).sort(byStart(1)).slice(0, 20);
-  majoList = await Promise.all(future.map(loadDetail));
+  const past = (done || []).map((t) => ({ ...t, _s: 'done' })).sort(byStart(-1)).slice(0, 5);
+  [majoList, majoPast] = await Promise.all([future, past].map((a) => Promise.all(a.map((t) => loadDetail(t, uid)))));
 }
 
 function renderMajo() {
   const el = $('#mList');
   if (!majoUser) { el.innerHTML = '<p class="muted">Lade …</p>'; return; }
   el.innerHTML = `<h2 class="sep">Geplante Turniere von ${esc(majoUser.name)}</h2>`
-    + (majoList.map(tcard).join('') || '<p class="muted">Keine geplanten Turniere gefunden.</p>');
+    + (majoList.map(tcard).join('') || '<p class="muted">Keine geplanten Turniere gefunden.</p>')
+    + '<h2 class="sep">Letzte 5 Turniere (neueste zuerst)</h2>'
+    + (majoPast.map(tcard).join('') || '<p class="muted">Keine abgeschlossenen Turniere gefunden.</p>');
 }
 
 let again = false;
@@ -256,7 +253,7 @@ async function refresh() {
   const errs = [];
   const run = (p) => p.catch((e) => errs.push(e.message));
   await Promise.all([
-    run(loadNotes().then(renderStrat)),
+    run(loadNotes()),
     run(loadMajo().then(renderMajo)),
     run(loadTournaments().then((ok) => ok !== false && renderTournaments())),
   ]);
@@ -324,12 +321,11 @@ document.addEventListener('click', (e) => {
   const tc = e.target.closest('[data-t]');
   if (tc) return nav({ modal: 'arenas', tid: tc.dataset.t, d: 1 });
   const g = e.target.closest('[data-g]');
-  if (g) return nav({ modal: 'game', notesOnly: !!g.closest('#strat'), name: g.dataset.g, tid: cur.modal === 'arenas' ? cur.tid : null, d: cur.modal === 'arenas' ? 2 : 1 });
+  if (g) return nav({ modal: 'game', name: g.dataset.g, tid: cur.modal === 'arenas' ? cur.tid : null, d: cur.modal === 'arenas' ? 2 : 1 });
   const tab = e.target.closest('[data-tab]');
   if (tab && tab.dataset.tab !== cur.tab) nav({ tab: tab.dataset.tab });
 });
 $('#close').onclick = () => { if (cur.d) history.go(-cur.d); else applyState({ tab: cur.tab }); };
-$('#sSearch').oninput = renderStrat;
 $('#search').oninput = renderGames;
 $('#playerName').oninput = onType;
 $('#playerForm').onsubmit = async (e) => {
@@ -344,7 +340,6 @@ $('#playerForm').onsubmit = async (e) => {
 if (selected) $('#playerName').value = selected.name;
 
 renderGames();
-renderStrat();
 renderTournaments();
 refresh();
 setInterval(refresh, 10000); // Auto-Refresh alle 10 s, solange die App sichtbar ist
