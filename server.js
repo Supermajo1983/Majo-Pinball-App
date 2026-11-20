@@ -2,6 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const TOKEN = process.env.MATCHPLAY_TOKEN || '';
@@ -11,6 +12,7 @@ const TYPES = {
   '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json',
   '.png': 'image/png', '.svg': 'image/svg+xml',
 };
+const MP_ALLOWED = /^(search|tournaments|tournaments\/\d+|tournaments\/\d+\/standings|users\/\d+)$/;
 const cache = new Map();
 const TTL = 4000;
 const STANDINGS_TTL = 15000; // Matchplay: Standings max. alle 15 s abfragen
@@ -33,7 +35,10 @@ async function mp(pathAndQuery) {
     entry = { t: Date.now(), status: res.status, body: await res.text() };
     if (res.status !== 404) { baseIdx = b; break; }
   }
-  if (entry.status >= 200 && entry.status < 300) cache.set(pathAndQuery, entry);
+  if (entry.status >= 200 && entry.status < 300) {
+    if (cache.size >= 500) cache.delete(cache.keys().next().value); // aeltesten Eintrag verwerfen
+    cache.set(pathAndQuery, entry);
+  }
   return entry;
 }
 
@@ -107,6 +112,14 @@ const readBody = (req) => new Promise((ok, fail) => {
   req.on('end', () => ok(b));
   req.on('error', fail);
 });
+// Bremse gegen Durchprobieren des Passworts: max. 10 Fehlversuche je 15 Minuten.
+// shortcut: global statt pro Nutzer (IP hinter Render-Proxy nicht verlaesslich), ein Angreifer kann so das Bearbeiten 15 min sperren.
+let fails = [];
+const FAIL_WINDOW = 15 * 60 * 1000;
+const keyOk = (k) => {
+  const a = Buffer.from(String(k || '')), b = Buffer.from(EDIT_KEY);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
 const json = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
 
 async function handleNotes(req, res, url) {
@@ -114,7 +127,9 @@ async function handleNotes(req, res, url) {
     if (req.method === 'GET') return json(res, 200, { notes: (await loadNotes()).notes, persistent: !!GH_TOKEN, editable: !!EDIT_KEY });
     if (req.method === 'POST') {
       if (!EDIT_KEY) return json(res, 403, { error: 'EDIT_KEY ist am Server nicht gesetzt' });
-      if (req.headers['x-edit-key'] !== EDIT_KEY) return json(res, 403, { error: 'Falsches Bearbeitungs-Passwort' });
+      fails = fails.filter((t) => Date.now() - t < FAIL_WINDOW);
+      if (fails.length >= 10) return json(res, 429, { error: 'Zu viele Fehlversuche, bitte in 15 Minuten erneut versuchen' });
+      if (!keyOk(req.headers['x-edit-key'])) { fails.push(Date.now()); return json(res, 403, { error: 'Falsches Bearbeitungs-Passwort' }); }
       const key = decodeURIComponent(url.pathname.slice('/api/notes/'.length));
       if (!key || key.length > 120) return json(res, 400, { error: 'Ungueltiger Schluessel' });
       const body = JSON.parse(await readBody(req) || '{}');
@@ -130,6 +145,8 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   if (url.pathname === '/api/notes' || url.pathname.startsWith('/api/notes/')) return handleNotes(req, res, url);
   if (url.pathname.startsWith('/api/mp/')) {
+    // Nur die Abfragen durchlassen, die die App braucht (der Token gehoert dem Betreiber).
+    if (!MP_ALLOWED.test(url.pathname.slice(8))) return json(res, 403, { error: 'Abfrage nicht erlaubt' });
     try {
       const r = await mp(url.pathname.slice(8) + url.search);
       res.writeHead(r.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });

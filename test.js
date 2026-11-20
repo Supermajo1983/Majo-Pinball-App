@@ -37,3 +37,41 @@ console.log('placeClass ok');
   if (P.length < 190 || P.some((p) => !p.name || !p.maker || !p.year || !p.rank)) throw new Error('pinside list invalid');
   console.log('pinside ok', P.length);
 }
+
+{
+  const vm = require('vm');
+  const ctx = { window: {} };
+  const dir = __dirname + '/public/data/';
+  ['games.js', ...require('fs').readdirSync(dir).filter((f) => /^part-\d+\.js$/.test(f)).sort(), 'merge.js']
+    .forEach((f) => vm.runInNewContext(require('fs').readFileSync(dir + f, 'utf8'), ctx));
+  const { matchGame } = require('./public/mp-utils.js');
+  const m = (n) => (matchGame(ctx.window.GAMES, n) || {}).name || null;
+  // Typische Matchplay-Geraetenamen: Varianten passen, fremde Geraete mit aehnlichem Namen nicht.
+  assert.strictEqual(m('Godzilla (Premium)'), 'Godzilla');
+  assert.strictEqual(m('Godzilla Pro'), 'Godzilla');
+  assert.strictEqual(m('TZ'), 'Twilight Zone');
+  assert.strictEqual(m('The Mandalorian (Premium/LE)'), 'The Mandalorian');
+  assert.strictEqual(m('Pirates of the Caribbean (Jersey Jack)'), 'Pirates of the Caribbean (Jersey Jack)');
+  ['Star Trek', 'Star Trek (Premium)', 'Indiana Jones (Stern)', 'Pirates of the Caribbean (Stern)', 'Bride of Pinbot', 'High Speed', 'Centaur II', '', null]
+    .forEach((n) => assert.strictEqual(m(n), null, String(n)));
+  console.log('matchGame ok');
+}
+
+// Server: Matchplay-Durchgang nur fuer erlaubte Abfragen, Bremse bei falschem Passwort.
+(async () => {
+  const { spawn } = require('child_process');
+  const port = 3900 + Math.floor(Math.random() * 90);
+  const srv = spawn(process.execPath, [__dirname + '/server.js'], { env: { ...process.env, PORT: port, EDIT_KEY: 'test-key', GITHUB_TOKEN: '', MATCHPLAY_TOKEN: '' } });
+  try {
+    await new Promise((ok) => srv.stdout.once('data', ok));
+    const base = 'http://localhost:' + port;
+    for (const p of ['users/me', 'tournaments/1/games', 'leagues', 'search/../users']) {
+      assert.strictEqual((await fetch(base + '/api/mp/' + p)).status, 403, p);
+    }
+    const post = (key) => fetch(base + '/api/notes/x', { method: 'POST', headers: { 'x-edit-key': key }, body: '{}' }).then((r) => r.status);
+    for (let i = 0; i < 10; i++) assert.strictEqual(await post('falsch' + i), 403);
+    assert.strictEqual(await post('falsch'), 429, 'nach 10 Fehlversuchen gesperrt');
+    assert.strictEqual(await post('test-key'), 429, 'auch richtiges Passwort waehrend der Sperre');
+    console.log('server ok');
+  } finally { srv.kill(); }
+})().catch((e) => { console.error(e); process.exit(1); });
