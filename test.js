@@ -56,3 +56,22 @@ console.log('placeClass ok');
     .forEach((n) => assert.strictEqual(m(n), null, String(n)));
   console.log('matchGame ok');
 }
+
+// Server: Matchplay-Durchgang nur fuer erlaubte Abfragen, Bremse bei falschem Passwort.
+(async () => {
+  const { spawn } = require('child_process');
+  const port = 3900 + Math.floor(Math.random() * 90);
+  const srv = spawn(process.execPath, [__dirname + '/server.js'], { env: { ...process.env, PORT: port, EDIT_KEY: 'test-key', GITHUB_TOKEN: '', MATCHPLAY_TOKEN: '' } });
+  try {
+    await new Promise((ok) => srv.stdout.once('data', ok));
+    const base = 'http://localhost:' + port;
+    for (const p of ['users/me', 'tournaments/1/games', 'leagues', 'search/../users']) {
+      assert.strictEqual((await fetch(base + '/api/mp/' + p)).status, 403, p);
+    }
+    const post = (key) => fetch(base + '/api/notes/x', { method: 'POST', headers: { 'x-edit-key': key }, body: '{}' }).then((r) => r.status);
+    for (let i = 0; i < 10; i++) assert.strictEqual(await post('falsch' + i), 403);
+    assert.strictEqual(await post('falsch'), 429, 'nach 10 Fehlversuchen gesperrt');
+    assert.strictEqual(await post('test-key'), 429, 'auch richtiges Passwort waehrend der Sperre');
+    console.log('server ok');
+  } finally { srv.kill(); }
+})().catch((e) => { console.error(e); process.exit(1); });
