@@ -1,0 +1,56 @@
+// KI Recherche: fest hinterlegte, quellengestuetzte Kurz-Rulesheets (nicht in der App bearbeitbar).
+// Abgleich wie bei den Tipps ueber MPU.matchGame (exakter Name/Alias, Standort-Kuerzel werden ignoriert).
+window.KI_RESEARCH = [
+  { name: 'Indianapolis 500', maker: 'Bally', year: 1995,
+    rules: [
+      'Ziel: 4 grosse Ziele (200 Laps, Platz 1, alle Speedway-Modes gespielt, Light-up-Wave 6) leuchten je einen Victory Lap am Center Saucer. Mehrere gleichzeitig = 200M / 500M / 732M / 1 Mrd.',
+      'Bonus-Multiplikator: in der Quelle nicht beschrieben. Grosser Multiplikator ist der Mode "3x Playfield" (30 Sek., verdreifacht alles inkl. Jackpots und Victory Lap).',
+      'Modes: linker Orbit leuchtet den rechten Orbit, Schuss in den hinteren Saucer startet den blinkenden Speedway-Mode. Mode wechseln nur ueber die rechte Rampe ("Advance Speedway"). 11 Modes, danach Checkered Flag = Victory Lap.',
+      'Multiball: linker Orbit leuchtet Locks, 2 Locks am Turbo (oberer Flipper) starten Multiball. Jackpots an den Rampen, danach immer die andere Rampe. Turbo in Single-Ball erhoeht den Jackpot (+2M, max. 50M).',
+      'Extra Ball: Speedway-Mode "Light Extra Ball" oder Light-up-Wave 4 (Center Saucer).',
+      'Skill Shot: nach dem Plunge sofort linke Rampe = 5M (+1M pro Mal, max. 15M). Alternativ rechte Rampe vom linken Flipper: startet Go for the Pole mit erstem Treffer.',
+      'Gasoline Alley: 3. Treffer am rechten Orbit ueberholt 15 Fahrer auf einmal, wichtig fuer Platz 1.',
+    ],
+    strategy: [
+      'Linker Orbit ist der Kernschuss: Locks, Fahrer ueberholen, Modes leuchten. Linker Orbit -> Lock-Combo dauerhaft spielen, wenn sie sitzt.',
+      '3x Playfield auf Multiball oder einen leuchtenden Victory Lap legen.',
+      'Victory Lap nicht sofort einsammeln, wenn ein zweites Ziel nah ist, dann mit 3x kassieren.',
+      'Gasoline Alley bis zum 3. Schuss durchziehen.',
+    ],
+    source: 'Pinball Primer, https://pinballprimer.github.io/indy500_Gr8l3.html, Stand 20.11.2026 (Software-Version nicht angegeben)' },
+  { name: 'World Cup Soccer', maker: 'Bally', year: 1994,
+    rules: [
+      'Ziel: 9 Staedte bis Los Angeles reisen, dann TV-Saucer = Final Match (5-Ball-Multiball, 45 Sek., Germany schlagen; 75M pro Tor + 500M bei Sieg).',
+      'Bonus-Multiplikator: gibt es nicht. Bonus = 5M pro Tor + 5M pro Stadt + Ultra-Werte des aktuellen Balls. Nicht tilten!',
+      'Tor: 4 Sterne-Rollover vor dem Tor leuchten es neu (10M). Jedes Tor startet einen Ultra-Mode (Ramps, Spinner, Jets, Goalie); jedes 4. Tor leuchtet einen TV-Award.',
+      'Staedte: beide Rampen oder obere Lanes (ueber linken Orbit) leuchten "Travel" am linken Orbit.',
+      'Multiball: weiss leuchtende Build-Lock-Schuesse fuellen den Fussball (5 Eigenschaften), dann Lock an einer Rampe, dann TV-Saucer = Final Draw. Jackpot = Tor; Rang steigt um 1 pro 2 Tore im Spiel, #1 Germany = 250M.',
+      'Extra Ball: Stadt Washington DC leuchtet ihn an Striker\'s Hideout; ausserdem TV-Mode "Extra Ball Round" und Striker-Award.',
+      'Skill Shot: Coin-Toss-Rampe, 3. Loch = 30M und eine Stadt.',
+      'Outlanes: links Kickback (rechte Inlane, dann linkes Standup); Magna-Save ueber dem linken Flipper (zweiter Knopf links).',
+    ],
+    strategy: [
+      'Tore schiessen ist alles: Bonus, Ultra-Modes, Multiball-Rang, TV-Awards.',
+      'Assist-Saucer vor dem Tor: Flipper druecken, Schuss auf den Torwart zaehlt immer als Tor.',
+      'Staedte konsequent ueber den linken Orbit holen; Final Match ist laut Quelle nicht schwer (mind. ca. 875M).',
+      'Auf Ball 3 und nach langen Baellen vorsichtig nudgen: Ultra-Werte gibt es nur im Bonus.',
+    ],
+    source: 'Pinball Primer, https://pinballprimer.github.io/wcs_G42E2.html, Stand 20.11.2026 (Software-Version nicht angegeben)' },
+  { name: 'Black Knight: Sword of Rage', aliases: ['Black Knight: Swords of Rage', 'BKSoR'], maker: 'Stern', year: 2019,
+    rules: [
+      'Ziel: 5 Monster Battles gewinnen, dann Black Castle (Wizard Mode).',
+      'Bonus-Multiplikator: obere WAR-Lanes komplettieren erhoeht Bonus X (und startet WAR Hurry-Up). The King\'s Ransom gibt +5x Bonus X.',
+      'Modes: einen der drei Center-Shots so oft wie noetig, dann Rampe hebt das Schild, Saucer dahinter startet den Battle. Schwert fuellen (rechte Drops, Center Target), POWER am Center Target = 2x Scoring und leichterer Battle.',
+      'Multiballs: "Light Lock"-Target, dann Lock am Schild-Saucer; 3 Locks = Triple Knights Challenge. KNIGHT-Buchstaben sammeln, dann linke Spinner-Lane = KNIGHT Multiball (Werte x Anzahl Baelle), beim 2. Mal The King\'s Ransom.',
+      'Extra Ball: Battle gewinnen oder genug U-Turns (Orbits ohne andere Schuesse) leuchten ihn am Schild-Saucer.',
+      'Skill Shot (Pro): leuchtende obere Lane plungen; linken Flipper halten und Lane nicht wechseln = Super Skill Shot (3x). Oder linken Flipper halten und einen Center-Shot treffen.',
+      'Magna-Save: Action-Knopf, wenn der Ball in die rechte Outlane laeuft; kassiert dabei die Super Modes als Super Jackpot. Drop Targets leuchten ihn wieder.',
+      'Ball Save: "Add Time"-Targets links leuchten Ball Save an der linken Outlane.',
+    ],
+    strategy: [
+      'POWER (volles Schwert) im Battle einsetzen: 2x Scoring fuer den ganzen Battle.',
+      'KNIGHT Multiball beendet einen laufenden zeitlichen Mode ohne Ausgleich: nicht mitten im Battle starten.',
+      'Super Modes laufen bis zum Drain: mit der linken Lane boosten und per Magna-Save kassieren.',
+    ],
+    source: 'Pinball Rulesheets, https://pinballrulesheets.com/stern/black-knight-sword-of-rage-rulesheet, Code Rev 1.14, Stand 20.11.2026' },
+];

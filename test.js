@@ -75,3 +75,18 @@ console.log('placeClass ok');
     console.log('server ok');
   } finally { srv.kill(); }
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// Standort-Kuerzel und KI Recherche (FreePlay Herten: "K06 Indianapolis 500", "S - Medusa" ...)
+{
+  const { cleanName, matchGame } = require('./public/mp-utils.js');
+  assert.deepStrictEqual(['K06 Indianapolis 500', 'S  Taxi', 'S - Medusa', 'K Strikes and Spares', 'E10 Centaur', 'Medusa', 'A Nightmare on Elm Street', 'F-14 Tomcat', 'X'].map(cleanName),
+    ['Indianapolis 500', 'Taxi', 'Medusa', 'Strikes and Spares', 'Centaur', 'Medusa', 'A Nightmare on Elm Street', 'F-14 Tomcat', 'X']);
+  const ctx = { window: {} };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/public/data/ki-research.js', 'utf8'), ctx);
+  const K = ctx.window.KI_RESEARCH;
+  K.forEach((k) => assert(k.rules.length && k.strategy.length && /Stand \d/.test(k.source), k.name));
+  assert.strictEqual(matchGame(K, 'E06 Black Knight: Swords of Rage').name, 'Black Knight: Sword of Rage');
+  assert.strictEqual(matchGame(K, 'S Black Knight'), null, 'alter Black Knight bekommt keine BKSoR-Recherche');
+  assert.strictEqual(matchGame(K, 'K06 Indianapolis 500').name, 'Indianapolis 500');
+  console.log('ki-research ok', K.length);
+}

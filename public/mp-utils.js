@@ -52,7 +52,11 @@
   const gnorm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').replace(/\bthe\b/g, '').replace(/\s+/g, ' ').trim();
   const VARIANT = /( (pro|premium|le|limited edition|se|ce|collectors edition|vault edition|remake|remastered))+$/;
   const gkey = (s) => (' ' + gnorm(s)).replace(VARIANT, '').trim();
+  // Standort-Kuerzel vor dem Namen entfernen, z. B. "K06 Indianapolis 500", "S  Taxi", "S - Medusa".
+  // "A ..." bleibt stehen (englischer Artikel, z. B. "A Nightmare on Elm Street").
+  const cleanName = (s) => String(s || '').replace(/^(?![AI]\s)[A-Z]\d{0,3}(?:\s+-)?\s+(?=\S)/, '').trim();
   function matchGame(games, name) {
+    name = cleanName(name);
     const find = (n, ok) => n && (games || []).find((g) => ok(g) && [g.name, ...(g.aliases || [])].some((a) => gkey(a) === n));
     const hit = find(gkey(name), () => true);
     if (hit) return hit;
@@ -63,7 +67,7 @@
     return find(gkey(m[1]), (g) => variant || gnorm(g.maker).includes(tag)) || null;
   }
 
-  const api = { matchUsers, placement, isPlayer, placeClass, matchGame };
+  const api = { matchUsers, placement, isPlayer, placeClass, matchGame, cleanName, gkey };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MPU = api;
 })(typeof window !== 'undefined' ? window : globalThis);

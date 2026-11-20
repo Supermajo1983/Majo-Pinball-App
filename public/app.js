@@ -7,20 +7,22 @@ const findGame = (name) => window.MPU.matchGame(window.GAMES, name);
 // --- Gemeinsame Notizen (Majo Strategie) ---
 let notes = {};
 let notesInfo = { persistent: true, editable: true };
+const { cleanName, gkey } = window.MPU;
+// Nur exakte Treffer (Variante wie "(Pro)" egal): unscharfer Abgleich hat fremde Geraete
+// zusammengelegt, z. B. "Black Knight: Swords of Rage" mit "Black Knight".
 const pinEntry = (name) => {
-  const n = norm(name);
-  if (!n) return null;
-  return window.PINSIDE.find((p) => norm(p.name) === n)
-    || window.PINSIDE.find((p) => { const x = norm(p.name); return x.length > 3 && n.length > 3 && (n.includes(x) || x.includes(n)); })
-    || null;
+  const c = cleanName(name);
+  if (!c) return null;
+  return window.PINSIDE.find((p) => norm(p.name) === norm(c)) || window.PINSIDE.find((p) => norm(p.name) === gkey(c)) || null;
 };
-const noteKey = (name) => { const p = pinEntry(name); return norm(p ? p.name : name); };
-const hasNote = (name) => { const n = notes[noteKey(name)]; return !!(n && (n.rules || n.strategy)); };
+const noteKey = (name) => { const p = pinEntry(name); return norm(p ? p.name : cleanName(name)); };
+// Alter Schluessel mit Kuerzel (z. B. "s dolly parton") bleibt lesbar.
+const getNote = (name) => notes[noteKey(name)] || notes[norm(name)];
+const hasNote = (name) => { const n = getNote(name); return !!(n && (n.rules || n.strategy)); };
 const rich = (t) => esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => `<a href="${u}" target="_blank" rel="noopener" style="color:#facc15">${u}</a>`);
 
 function notesHtml(name, editing) {
-  const k = noteKey(name);
-  const n = notes[k] || {};
+  const n = getNote(name) || {};
   const head = '<h3>Majo Strategie</h3>';
   if (editing) {
     return `${head}<label class="muted">Rulesheet (Text oder Link)</label><textarea id="nRules" rows="4">${esc(n.rules || '')}</textarea>
@@ -44,13 +46,21 @@ function proHtml(name) {
   return (items.length ? '<h3>Profi-Tipps (dieses Gerät)</h3>' + ul(items) : '') + (gen.length ? '<h3>Profi-Mindset (Top-Spieler)</h3>' + ul(gen) : '');
 }
 
+function kiHtml(name) {
+  const k = window.MPU.matchGame(window.KI_RESEARCH, name);
+  if (!k) return '';
+  const ul = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
+  return `<h3>KI Recherche</h3><p><b>Rulesheet:</b></p>${ul(k.rules)}<p><b>Strategie:</b></p>${ul(k.strategy)}<p class="muted">Quelle: ${rich(k.source)}</p>`;
+}
+
 function showGame(name, fromList, notesOnly) {
   const g = findGame(name);
   const list = (a) => '<ul>' + a.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>';
   const back = fromList ? '<button class="back" data-back="1">← Zurück zur Geräteliste</button>' : '';
-  $('#detail').innerHTML = `${back}<h2>${esc(g ? g.name : name)}</h2>
+  $('#detail').innerHTML = `${back}<h2>${esc(g ? g.name : cleanName(name))}</h2>
     <div class="muted">${g ? esc(g.maker + ' · ' + g.year) : ''}</div>
     <div id="notes" data-name="${esc(name)}">${notesHtml(name)}</div>
+    ${kiHtml(name)}
     ${notesOnly ? '' : g ? `<h3>Tipps</h3>${list(g.tips)}<h3>Turnierstrategie</h3>${list(g.strategy)}` : '<p class="warn">Für dieses Gerät sind noch keine recherchierten Tipps hinterlegt.</p>'}
     ${notesOnly ? '' : proHtml(g ? g.name : name)}
     ${!notesOnly && g && g.sources.length ? '<p class="muted">Quellen: ' + g.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener" style="color:#facc15">${esc(new URL(u).hostname)}</a>`).join(' · ') + '</p>' : ''}`;
@@ -203,7 +213,7 @@ function showArenas(id) {
   if (!t) return;
   const arenas = t.arenas || [];
   $('#detail').innerHTML = `<h2>${esc(t.name)}</h2><div class="muted">${arenas.length} Flipper – antippen für Tipps &amp; Strategie</div>`
-    + (arenas.map((a) => `<div class="item click" data-g="${esc(a.name)}"><b>${esc(a.name)}</b>${hasNote(a.name) ? ' <span class="tag">✎ Notiz</span>' : ''}${findGame(a.name) ? '' : ' <span class="muted">(keine recherchierten Tipps)</span>'}</div>`).join('')
+    + (arenas.map((a) => `<div class="item click" data-g="${esc(a.name)}"><b>${esc(cleanName(a.name))}</b>${hasNote(a.name) ? ' <span class="tag">✎ Notiz</span>' : ''}${findGame(a.name) || window.MPU.matchGame(window.KI_RESEARCH, a.name) ? '' : ' <span class="muted">(keine recherchierten Tipps)</span>'}</div>`).join('')
       || '<p class="muted">Keine Geräte hinterlegt.</p>');
   $('#modal').hidden = false;
   $('#modal').scrollTop = 0;
