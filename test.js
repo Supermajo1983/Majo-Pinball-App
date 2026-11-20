@@ -86,7 +86,18 @@ console.log('placeClass ok');
   const K = ctx.window.KI_RESEARCH;
   K.forEach((k) => assert(k.rules.length && k.strategy.length && /Stand \d/.test(k.source), k.name));
   assert.strictEqual(matchGame(K, 'E06 Black Knight: Swords of Rage').name, 'Black Knight: Sword of Rage');
-  assert.strictEqual(matchGame(K, 'S Black Knight'), null, 'alter Black Knight bekommt keine BKSoR-Recherche');
+  assert.strictEqual(matchGame(K, 'S Black Knight').year, 1980, 'alter Black Knight bekommt nicht die BKSoR-Recherche');
   assert.strictEqual(matchGame(K, 'K06 Indianapolis 500').name, 'Indianapolis 500');
   console.log('ki-research ok', K.length);
+}
+// Alle 49 Geraete des Freeplay Summer Cup 2026 (FreePlay Herten) haben eine KI Recherche.
+{
+  const { matchGame } = require('./public/mp-utils.js');
+  const ctx = { window: {} };
+  vm.runInNewContext(fs.readFileSync(__dirname + '/public/data/ki-research.js', 'utf8'), ctx);
+  const arenas = ['K06 Indianapolis 500', 'K10 Pin Bot', 'S Royal Rumble', 'S Deadpool', 'E10 Centaur', 'S Dolly Parton', 'S  Taxi', 'E01 Fish Tales', 'S Black Knight', 'S 6M Dollar Man', 'K16 Champion Pub', 'E05 Harlem Globetrotters', 'E11 Flash Gordon', 'K01 Eight Ball', 'K04 The Getaway', 'K02 NBA Fastbreak', 'K15 Spiderman', 'K14 Buck Rogers', 'K12 Iron Maiden', 'K03 Fun House', 'E04 Lethal Weapon 3', 'K09 Elvira Party Monsters', 'K08 The Addams Family', 'E09 Medieval Madness', 'E08 White Water', 'K05 Paragon', 'K20 Monster Bash', 'K11 Viking', 'K18 Swords of Fury', "E02 Rack 'Em Up", 'S Mandalorian', 'K17 Indiana Jones', 'E03 Whirlwind', 'E06 Black Knight: Swords of Rage', 'E07 Turtles', 'K13 Attack from Mars', 'S F-14 Tomcat', 'S Elvis', "S The Who's Tommy Pinball Wizard", 'S Torch', 'S World Cup Soccer', 'S Air Aces', "S Sharkey's Shootout", 'S Family Guy', 'S Earthshaker', 'S - Medusa', 'S Playboy', 'K Strikes and Spares', 'S Metallica (Pro)'];
+  const missing = arenas.filter((a) => !matchGame(ctx.window.KI_RESEARCH, a));
+  assert.deepStrictEqual(missing, [], 'ohne KI Recherche: ' + missing);
+  assert.strictEqual(matchGame(ctx.window.KI_RESEARCH, 'K01 Eight Ball').year, 1977, 'Eight Ball ist nicht Eight Ball Deluxe');
+  console.log('summer cup ok', arenas.length);
 }
