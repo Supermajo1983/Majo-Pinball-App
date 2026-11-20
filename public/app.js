@@ -152,8 +152,9 @@ async function loadDetail(t) {
 const byStart = (dir) => (a, b) => dir * (new Date(a.startUtc || 0) - new Date(b.startUtc || 0));
 
 async function loadTournaments() {
-  if (!selected) { tournaments = []; return; }
-  const q = (s) => mpGet(`tournaments?played=${selected.userId}&status=${s}`);
+  const sel = selected;
+  if (!sel) { tournaments = []; return; }
+  const q = (s) => mpGet(`tournaments?played=${sel.userId}&status=${s}`);
   const [live, soon, done] = await Promise.all([q('started'), q('upcoming'), q('completed')]);
   const tag = (a, s) => (a || []).map((t) => ({ ...t, _s: s }));
   const now = Date.now();
@@ -168,7 +169,8 @@ async function loadTournaments() {
     ...past.slice(0, completedLimit),
   ];
   const detailed = await Promise.all(list.map(loadDetail));
-  tournaments = detailed.filter((t) => window.MPU.isPlayer(t.players, selected.userId));
+  if (sel !== selected) return false; // Spieler wurde inzwischen gewechselt: altes Ergebnis verwerfen
+  tournaments = detailed.filter((t) => window.MPU.isPlayer(t.players, sel.userId));
 }
 
 const LABEL = { live: ['LIVE', 'live'], soon: ['geplant', ''], done: ['abgeschlossen', ''] };
@@ -236,18 +238,21 @@ function renderMajo() {
     + (majoList.map(tcard).join('') || '<p class="muted">Keine geplanten Turniere gefunden.</p>');
 }
 
+let again = false;
 async function refresh() {
-  if (document.hidden || busy) return;
+  if (document.hidden) return;
+  if (busy) { again = true; return; } // laeuft schon: direkt danach noch einmal
   busy = true;
   const errs = [];
   const run = (p) => p.catch((e) => errs.push(e.message));
   await Promise.all([
     run(loadNotes().then(renderStrat)),
     run(loadMajo().then(renderMajo)),
-    run(loadTournaments().then(renderTournaments)),
+    run(loadTournaments().then((ok) => ok !== false && renderTournaments())),
   ]);
   $('#status').textContent = errs.length ? '⚠ ' + errs[0] : 'Aktualisiert ' + new Date().toLocaleTimeString('de-DE');
   busy = false;
+  if (again) { again = false; refresh(); }
 }
 
 // --- Spielersuche mit Vorschlaegen ---
