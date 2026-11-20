@@ -37,3 +37,22 @@ console.log('placeClass ok');
   if (P.length < 190 || P.some((p) => !p.name || !p.maker || !p.year || !p.rank)) throw new Error('pinside list invalid');
   console.log('pinside ok', P.length);
 }
+
+{
+  const vm = require('vm');
+  const ctx = { window: {} };
+  const dir = __dirname + '/public/data/';
+  ['games.js', ...require('fs').readdirSync(dir).filter((f) => /^part-\d+\.js$/.test(f)).sort(), 'merge.js']
+    .forEach((f) => vm.runInNewContext(require('fs').readFileSync(dir + f, 'utf8'), ctx));
+  const { matchGame } = require('./public/mp-utils.js');
+  const m = (n) => (matchGame(ctx.window.GAMES, n) || {}).name || null;
+  // Typische Matchplay-Geraetenamen: Varianten passen, fremde Geraete mit aehnlichem Namen nicht.
+  assert.strictEqual(m('Godzilla (Premium)'), 'Godzilla');
+  assert.strictEqual(m('Godzilla Pro'), 'Godzilla');
+  assert.strictEqual(m('TZ'), 'Twilight Zone');
+  assert.strictEqual(m('The Mandalorian (Premium/LE)'), 'The Mandalorian');
+  assert.strictEqual(m('Pirates of the Caribbean (Jersey Jack)'), 'Pirates of the Caribbean (Jersey Jack)');
+  ['Star Trek', 'Star Trek (Premium)', 'Indiana Jones (Stern)', 'Pirates of the Caribbean (Stern)', 'Bride of Pinbot', 'High Speed', 'Centaur II', '', null]
+    .forEach((n) => assert.strictEqual(m(n), null, String(n)));
+  console.log('matchGame ok');
+}

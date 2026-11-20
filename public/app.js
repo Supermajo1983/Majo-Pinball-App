@@ -2,13 +2,7 @@ const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').replace(/\bthe\b/g, '').replace(/\s+/g, ' ').trim();
 
-function findGame(name) {
-  const n = norm(name);
-  if (!n) return null;
-  return window.GAMES.find((g) => [g.name, ...g.aliases].some((a) => norm(a) === n))
-    || window.GAMES.find((g) => [g.name, ...g.aliases].some((a) => { const x = norm(a); return x.length > 3 && (n.includes(x) || x.includes(n)); }))
-    || null;
-}
+const findGame = (name) => window.MPU.matchGame(window.GAMES, name);
 
 // --- Gemeinsame Notizen (Majo Strategie) ---
 let notes = {};

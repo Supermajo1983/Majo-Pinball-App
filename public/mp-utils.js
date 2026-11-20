@@ -47,7 +47,23 @@
     return position / total <= 0.1 ? 'p-top10' : '';
   }
 
-  const api = { matchUsers, placement, isPlayer, placeClass };
+  // Flipper-Abgleich nur exakt (Name oder Alias), damit nie Tipps eines anderen Geraets erscheinen.
+  // Varianten wie Pro/Premium/LE werden ignoriert; "(Stern)" o. ae. muss zum Hersteller passen.
+  const gnorm = (s) => String(s || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').replace(/\bthe\b/g, '').replace(/\s+/g, ' ').trim();
+  const VARIANT = /( (pro|premium|le|limited edition|se|ce|collectors edition|vault edition|remake|remastered))+$/;
+  const gkey = (s) => (' ' + gnorm(s)).replace(VARIANT, '').trim();
+  function matchGame(games, name) {
+    const find = (n, ok) => n && (games || []).find((g) => ok(g) && [g.name, ...(g.aliases || [])].some((a) => gkey(a) === n));
+    const hit = find(gkey(name), () => true);
+    if (hit) return hit;
+    const m = String(name || '').match(/^(.*\S)\s*\(([^()]*)\)\s*$/);
+    if (!m) return null;
+    const tag = gnorm(m[2]);
+    const variant = !(' ' + tag).replace(VARIANT, '').trim();
+    return find(gkey(m[1]), (g) => variant || gnorm(g.maker).includes(tag)) || null;
+  }
+
+  const api = { matchUsers, placement, isPlayer, placeClass, matchGame };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MPU = api;
 })(typeof window !== 'undefined' ? window : globalThis);
