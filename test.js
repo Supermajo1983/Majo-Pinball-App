@@ -101,3 +101,17 @@ console.log('placeClass ok');
   assert.strictEqual(matchGame(ctx.window.KI_RESEARCH, 'K01 Eight Ball').year, 1977, 'Eight Ball ist nicht Eight Ball Deluxe');
   console.log('summer cup ok', arenas.length);
 }
+// Jeder Flipper der App (Pinside-Top-Liste und Spielliste) hat eine KI Recherche, mit dem richtigen Hersteller.
+{
+  const { matchGame } = require('./public/mp-utils.js');
+  const ctx = { window: {} };
+  for (const f of fs.readdirSync(__dirname + '/public/data').filter((x) => x.endsWith('.js')).sort((a, b) => (a === 'merge.js') - (b === 'merge.js')))
+    vm.runInNewContext(fs.readFileSync(__dirname + '/public/data/' + f, 'utf8'), ctx);
+  const W = ctx.window;
+  const names = [...new Set([...(W.GAMES || []), ...(W.PINSIDE || [])].map((g) => g.name))];
+  const missing = names.filter((n) => !matchGame(W.KI_RESEARCH, n));
+  assert.deepStrictEqual(missing, [], 'ohne KI Recherche: ' + missing);
+  assert.strictEqual(matchGame(W.KI_RESEARCH, "Guns N' Roses (Data East)").year, 1994);
+  assert.strictEqual(matchGame(W.KI_RESEARCH, 'Jurassic Park').year, 2019);
+  console.log('alle flipper ok', names.length);
+}
